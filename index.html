@@ -1,0 +1,86 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no">
+  <title>webSocket Example</title>
+</head>
+<body>
+    <div id="app">
+      {{status}}
+      <div v-if="name==''" >
+        <input v-model="tempName" placeholder="이름입력">
+        <button @click="setName">저장</button>
+      </div>
+      <div v-else>
+        <textarea style="resize: none;width: 30%;height: 10vh;" placeholder="메시지 입력" v-model="message"></textarea>
+        <button @click="sendMessage">보내기</button>
+      </div>
+      <div>
+        <pre v-for="(item, index) in items" :key="index">
+          {{item}}
+        </pre>
+      </div>
+    </div>
+</body>
+</html>
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+<script>
+  var app = new Vue({
+    el: '#app',
+    data: function() {
+      return {
+        status: "연결대기",
+        name: "",
+        tempName: "",
+        message: "",
+        items: [],
+      }
+    },
+    methods: {
+      init: function() {
+        let that = this;
+        this.status = "연결중"
+        // 웹소켓 전역 객체 생성
+        this.ws = new WebSocket("ws://localhost:3001");
+        this.ws.onopen = function(event) {
+          that.ready();
+          // 서버로 부터 메시지를 수신한다
+          that.ws.onmessage = function(event) {
+            that.onMessage(event);
+          },
+          // error event handler
+          that.ws.onerror = function(event) {
+            that.onErr(event);
+          },
+          that.ws.onclose = function(event) {
+            that.onClose(event);
+          }
+        }
+        
+      },
+      ready: function() {
+        this.status = "연결완료";
+
+      },
+      setName: function() {
+        this.name = this.tempName;
+        this.init();
+      },
+      sendMessage: function() {
+        this.ws.send(`${this.name}: ${this.message}`);
+        this.message = '';
+      },
+      onClose: function(event) {
+        console.log(event);
+      },
+      onMessage: function(event) {
+        this.items.push(event.data);
+      },
+      onErr: function(event) {
+
+      }
+    }
+  })
+ 
+</script>
